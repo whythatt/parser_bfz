@@ -96,12 +96,14 @@ citys = [
 # Настройка драйвера
 driver = webdriver.Chrome()
 
-all_company_links = []
+all_company_links = {}
 
-for city in citys:
+for city in citys[:5]:
     # Открытие Яндекс Карт
     driver.get("https://yandex.ru/maps")
-    time.sleep(3)
+    WebDriverWait(driver, 300).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".input__control"))
+    )
 
     # Поиск по запросу
     search_box = driver.find_element(
@@ -111,23 +113,23 @@ for city in citys:
     search_box.send_keys(f"{city} банкротство юридических лиц")
     search_box.send_keys(Keys.RETURN)
 
-    time.sleep(5)  # Задержка для загрузки результатов
+    # time.sleep(5)  # Задержка для загрузки результатов
 
     # Прокрутка страницы до загрузки всех данных (можно адаптировать под ваши нужды)
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, ".scroll__scrollbar"))
+    WebDriverWait(driver, 300).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".scroll__container"))
     )
 
     # Прокрутка указанного блока до загрузки всех данных
     last_height = driver.execute_script(
         "return document.querySelector('.scroll__container').scrollHeight"
     )
-    time.sleep(3)
+    time.sleep(4)
 
     while True:
         elem = driver.find_element(By.CLASS_NAME, "scroll__container")
         elem.send_keys(Keys.END)
-        time.sleep(5)
+        time.sleep(4)
         new_height = driver.execute_script(
             "return document.querySelector('.scroll__container').scrollHeight"
         )
@@ -140,11 +142,15 @@ for city in citys:
     tree = etree.fromstring(page_source, etree.HTMLParser())
 
     all_links = tree.xpath('//a[@class="link-overlay"]/@href')
-    for link in all_links:
-        all_company_links.append("https://yandex.ru/" + link)
 
-    with open("company_links.json", "a", encoding="utf-8") as file:
-        json.dump({f"{city}": all_company_links}, file, indent=4, ensure_ascii=False)
+    company_links = ["https://yandex.ru" + link for link in all_links]
+
+    # Добавляем ссылки в словарь под названием города
+    all_company_links[city] = company_links
+
+# Сохранение всех собранных данных в JSON файл
+with open("company_links.json", "w", encoding="utf-8") as file:
+    json.dump(all_company_links, file, indent=4, ensure_ascii=False)
 
 # Закрытие драйвера
 driver.quit()
