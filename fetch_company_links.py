@@ -98,7 +98,7 @@ driver = webdriver.Chrome()
 
 all_company_links = {}
 
-for city in citys[:5]:
+for city in citys:
     # Открытие Яндекс Карт
     driver.get("https://yandex.ru/maps")
     WebDriverWait(driver, 300).until(
@@ -128,6 +128,7 @@ for city in citys[:5]:
 
     while True:
         elem = driver.find_element(By.CLASS_NAME, "scroll__container")
+        time.sleep(2)
         elem.send_keys(Keys.END)
         time.sleep(4)
         new_height = driver.execute_script(
